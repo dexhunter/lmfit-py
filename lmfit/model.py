@@ -910,10 +910,7 @@ class Model:
         return diff
 
     def _strip_prefix(self, name):
-        npref = len(self._prefix)
-        if npref > 0 and name.startswith(self._prefix):
-            name = name[npref:]
-        return name
+        return name.removeprefix(self._prefix)
 
     def make_funcargs(self, params=None, kwargs=None, strip=True):
         """Convert parameter values and keywords to function arguments."""
@@ -937,29 +934,42 @@ class Model:
         if len(saved_values) > 0:
             params.update_constraints()
 
-        # 1. fill in in all parameter values
-        for name, par in params.items():
-            if strip:
-                name = self._strip_prefix(name)
-            if name in self._func_allargs or self._func_haskeywords:
-                out[name] = par.value
+        # 1. fill in in all parameter values: map the parameter names that
+        #    can supply a function argument to that argument, so that only
+        #    those parameters are read (in the order of params)
+        allargs = set(self._func_allargs)
+        haskeywords = self._func_haskeywords
+        argnames = {}
+        for name in params if haskeywords else self._func_allargs:
+            argname = self._strip_prefix(name) if strip else name
+            if haskeywords or argname in allargs:
+                argnames[name] = argname
+        if strip and not haskeywords:
+            # 'prefix+argname' always strips back to argname
+            argnames.update((f"{self._prefix}{name}", name)
+                            for name in self._func_allargs)
+        values = {}
+        for name in list(filter(argnames.__contains__, params)):
+            values[name] = out[argnames[name]] = params[name].value
 
         # 2. for each function argument, use 'prefix+varname' in params,
-        # avoiding possible name collisions with unprefixed params
+        # avoiding possible name collisions with unprefixed params; reuse
+        # the values read above to avoid re-evaluating constraint expressions
         if len(self._prefix) > 0:
             for fullname in self._param_names:
                 if fullname in params:
                     name = self._strip_prefix(fullname)
-                    if name in self._func_allargs or self._func_haskeywords:
-                        out[name] = params[fullname].value
+                    if haskeywords or name in allargs:
+                        if fullname not in values:
+                            values[fullname] = params[fullname].value
+                        out[name] = values[fullname]
 
         # 3. kwargs might directly update function arguments
-        validnames = [ivar for ivar in self.independent_vars]
-        validnames.extend(self._func_allargs)
+        validnames = allargs.union(self.independent_vars)
         for name, val in kwargs.items():
             if strip:
                 name = self._strip_prefix(name)
-            if name in validnames or self._func_haskeywords:
+            if haskeywords or name in validnames:
                 out[name] = val
 
         # 4. finally, reset any values that have overwritten parameter values
