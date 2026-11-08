@@ -7,7 +7,7 @@
     "stars": 1243,
     "file": "lmfit/model.py",
     "symbol": "Model.make_funcargs",
-    "metric_kind": "wall_time_s",
+    "metric_kind": "wall",
     "baseline_value": 0.005123264999951971,
     "baseline_noise_pct": 1.1420646798621175,
     "baseline_samples_s": [
@@ -26,6 +26,11 @@
     "approach": "For a prefixed model whose function has no **kwargs, read only that component's arguments: for each function argument, the parameter named prefix+argument, and the bare argument when that name does not start with the prefix. Evaluate .value in params insertion order, then re-read self._param_names so a prefixed parameter still overwrites an unprefixed one. Build the insertion-order map once per top-level Model.eval or CompositeModel.eval and share it with nested components. Keep the existing full scan for unprefixed models, **kwargs functions, strip=False, and direct make_funcargs calls. Keep the keyword overwrite and the saved-value restore.",
     "result_constraint": "Returned arrays and fit outputs stay the same, including expression order. A private implementation matched Model.eval exactly on a reverse within-component expression, on 60 random composite models, and on a constrained 6-peak fit. A 40-peak fit capped at 25 evaluations matched residual, best_values, chisqr, and nfev exactly (chisqr 9400.078433862305). The same patch still passed the native suite: 790 passed, 30 skipped.",
     "observed_effect": "On this machine the private patch made this harness's 80-peak eval about 3.9x faster and a 160-peak eval about 5.9x faster. The same patch made a 40-peak Model.fit with max_nfev=25 about 1.52x faster (median about 0.083s to 0.053s) with identical residuals. Those patched times are not the baseline.",
-    "benchmark_protocol": "OMP/OPENBLAS/MKL/NUMEXPR threads set to 1, taskset -c 0, one warmup eval, then 5 rounds. Each round is the median of 7 evals. baseline_noise_pct is (max-min)/median*100 of those 5 medians. Workload: 80 GaussianModel peaks, 2000 x points, g{i}_sigma expr tied to g0_sigma. Checksum of the warmup eval is 39980.00000000001."
+    "benchmark_protocol": "OMP/OPENBLAS/MKL/NUMEXPR threads set to 1, taskset -c 0, one warmup eval, then 5 rounds. Each round is the median of 7 evals. baseline_noise_pct is (max-min)/median*100 of those 5 medians. Workload: 80 GaussianModel peaks, 2000 x points, g{i}_sigma expr tied to g0_sigma. Checksum of the warmup eval is 39980.00000000001.",
+    "upstream_repo": "https://github.com/lmfit/lmfit-py",
+    "head_sha": "3a2439c2061ddeaf4cca8f99eb70a069e6a51a41",
+    "function": "Model.make_funcargs",
+    "native_test_cmd": "python3 -m pytest tests -q -o addopts= -p no:cacheprovider",
+    "baseline_median_ms": 5.123264999951971
   }
 ]
